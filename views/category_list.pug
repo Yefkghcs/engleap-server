@@ -1,0 +1,11 @@
+extends layout
+
+block content
+  h1= title
+
+  if categories.length
+    ul
+      each category in categories
+        li #{category.main} - #{category.sub}
+  else
+    p There are no categories.

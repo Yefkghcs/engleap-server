@@ -1,0 +1,11 @@
+extends layout
+
+block content
+  h1= title
+
+  if words.length
+    ul
+      each word in words
+        li #{word.word} - #{word.meaning}
+  else
+    p There are no words.

@@ -1,0 +1,13 @@
+const express = require('express');
+const router = express.Router();
+
+/* GET home page. */
+router.get('/', function(req, res, next) {
+  res.render('layout');
+});
+
+router.get('/view', function(req, res, next) {
+  res.render('layout');
+});
+
+module.exports = router;

@@ -1,0 +1,47 @@
+extends layout
+
+block content
+  h1= title
+  
+  .container.mt-4
+    .row
+      .col-12
+        .card
+          .card-header.d-flex.justify-content-between.align-items-center
+            h5.card-title.mb-0 验证码列表
+            span.badge.bg-secondary 总计: #{total} 个
+          .card-body
+            if codes && codes.length > 0
+              .table-responsive
+                table.table.table-striped.table-hover
+                  thead.table-dark
+                    tr
+                      th(scope="col") 验证码
+                      th(scope="col") 状态
+                      th(scope="col") 绑定邮箱
+                      th(scope="col") 创建时间
+                      th(scope="col") 使用时间
+                  tbody
+                    each code in codes
+                      tr
+                        td
+                          code= code.code
+                        td
+                          if code.isUsed
+                            span.badge.bg-success 已使用
+                          else
+                            span.badge.bg-warning.text-dark 未使用
+                        td
+                          if code.usedByEmail
+                            code.text-success= code.usedByEmail
+                          else
+                            span.text-muted -
+                        td= code.createdAt ? new Date(code.createdAt).toLocaleString('zh-CN') : '-'
+                        td= code.usedAt ? new Date(code.usedAt).toLocaleString('zh-CN') : '-'
+            else
+              .alert.alert-info.text-center
+                h5 暂无验证码数据
+                p 还没有生成任何验证码，请先前往生成验证码页面创建。
+              
+            .d-grid.gap-2.d-md-flex.justify-content-md-end.mt-3
+              a.btn.btn-primary(href="/view/generateCode") 生成新验证码

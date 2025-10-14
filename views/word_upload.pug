@@ -1,0 +1,122 @@
+extends layout
+
+block content
+  h1 #{title}
+
+  //- 显示当前数据统计
+  if wordCount !== undefined
+    .alert.alert-info
+      strong 当前数据库中共有 #{wordCount} 个单词
+
+  //- 上传文件表单
+  .card.mb-4
+    .card-header(style='padding-top: 20px')
+      h5 上传单词数据（新增，不覆盖原数据）
+    .card-body
+      form(method='POST' action='/view/wordUpload' enctype='multipart/form-data')
+        .form-group
+          label(for='file') 选择 Excel 文件:
+          input#file.form-control(
+            type='file', 
+            name='file', 
+            accept='.xlsx,.xls',
+            required
+          )
+          small.form-text.text-muted
+            | 支持的文件格式: .xlsx, .xls
+        .form-group
+          label(for='headerRows', style='margin-top: 20px') 表头行数:
+          input#headerRows.form-control(
+            type='number', 
+            name='headerRows', 
+            min='0',
+            max='10',
+            value='2',
+            placeholder='请输入表头行数'
+          )
+          small.form-text.text-muted
+            | 文件开头需要跳过的表头行数，默认为2行
+        button.btn.btn-primary(type='submit', style='margin-top: 20px') 上传文件
+
+  //- 删除特定分类数据表单
+  .card.mb-4
+    .card-header(style='padding-top: 20px')
+      h5.text-warning 删除特定分类单词
+    .card-body
+      p.text-muted 根据分类和子分类删除特定单词数据
+      form(method='POST' action='/view/wordDeleteByCategory')
+        .form-group
+          label(for='category') 分类 (category):
+          input#category.form-control(
+            type='text', 
+            name='category', 
+            placeholder='请输入分类名称，留空则匹配所有分类'
+          )
+        .form-group
+          label(for='subcategory', style='margin-top: 10px') 子分类 (subcategory):
+          input#subcategory.form-control(
+            type='text', 
+            name='subcategory', 
+            placeholder='请输入子分类名称，留空则匹配所有子分类'
+            style='margin-bottom: 10px'
+          )
+          small.form-text.text-muted
+            | 两个字段都留空将不会删除任何数据
+        button.btn.btn-warning(type='submit') 
+          i.fas.fa-trash()
+          | 删除指定分类单词
+
+  //- 删除所有数据表单
+  .card
+    .card-header(style='padding-top: 20px')
+      h5.text-danger 删除所有单词
+    .card-body
+      p.text-muted 此操作将永久删除所有单词数据，且不可恢复！
+      form(method='POST' action='/view/wordDeleteAll')
+        .form-group
+          label.text-danger 确认删除所有单词数据？
+        button.btn.btn-danger(type='submit') 
+          i.fas.fa-trash()
+          | 确认删除
+
+  //- 成功消息
+  if success
+    .alert.alert-success.mt-4
+      strong 上传成功!
+      p #{success}
+
+  if deleteSuccess
+    .alert.alert-success.mt-4
+      strong 删除成功!
+      p #{deleteSuccess}
+
+  //- 错误消息
+  if errors
+    .alert.alert-danger.mt-4
+      strong 操作过程中出现错误:
+      ul
+        for error in errors
+          li!= error.msg
+
+  //- 警告消息
+  if warnings && warnings.length > 0
+    .alert.alert-warning.mt-4
+      strong 警告:
+      ul
+        for warning in warnings
+          li!= warning
+
+  //- 显示预览区域
+  if previewData
+    .mt-4
+      h3 数据预览 (前5行)
+      table.table.table-striped
+        thead
+          tr
+            each header in previewData.headers
+              th= header
+        tbody
+          each row in previewData.rows
+            tr
+              each cell in row
+                td= cell

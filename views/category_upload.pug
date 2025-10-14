@@ -1,0 +1,73 @@
+extends layout
+
+block content
+
+  h1 #{title}
+
+  form(method='POST' enctype='multipart/form-data')
+    div.form-group
+      label(for='file') 选择 Excel 文件:
+      input#file.form-control(
+        type='file', 
+        name='file', 
+        accept='.xlsx,.xls',
+        required
+      )
+      small.form-text.text-muted
+        | 支持的文件格式: .xlsx, .xls
+    div.form-group
+      label(for='sheetName') Excel 工作表名称 (可选):
+      input#sheetName.form-control(
+        type='text', 
+        name='sheetName', 
+        placeholder='例如: Sheet1'
+      )
+      small.form-text.text-muted
+        | 如果为空则使用第一个工作表
+    div.form-group
+      label(for='headerRows') 表头行数:
+      input#headerRows.form-control(
+        type='number', 
+        name='headerRows', 
+        min='0',
+        max='10',
+        value='2',
+        placeholder='请输入表头行数'
+      )
+      small.form-text.text-muted
+        | 文件开头需要跳过的表头行数，默认为2行
+    button.btn.btn-primary(type='submit', style='margin-top: 20px') 上传文件
+
+  if success
+    div.alert.alert-success(style='margin-top: 20px')
+      strong 上传成功!
+      p #{success}
+
+  if errors
+    div.alert.alert-danger(style='margin-top: 20px')
+      strong 上传过程中出现错误:
+      ul
+        for error in errors
+          li!= error.msg
+
+  if warnings && warnings.length > 0
+    div.alert.alert-warning(style='margin-top: 20px')
+      strong 警告:
+      ul
+        for warning in warnings
+          li!= warning
+
+  //- 显示预览区域（可选）
+  if previewData
+    div(style='margin-top: 20px')
+      h3 数据预览 (前5行)
+      table.table.table-striped
+        thead
+          tr
+            each header in previewData.headers
+              th= header
+        tbody
+          each row in previewData.rows
+            tr
+              each cell in row
+                td= cell

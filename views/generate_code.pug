@@ -1,0 +1,99 @@
+//- extends layout
+
+//- block content
+//-   h1= title
+  
+//-   .container.mt-4
+//-     .row
+//-       .col-md-8.mx-auto
+//-         .card
+//-           .card-header
+//-             h5.card-title 生成邀请验证码
+//-           .card-body
+//-             if code
+//-               .alert.alert-success
+//-                 h4 验证码生成成功！
+//-                 .generated-code.mt-3
+//-                   p 请将此验证码提供给购买产品的用户用于注册：
+//-                   .code-display.text-center.p-3.mb-3
+//-                     h2.text-primary(style="font-family: 'Courier New', monospace; letter-spacing: 2px;")= code
+//-                   p.text-muted.small
+//-                     | 验证码已自动保存到数据库，用户注册时可直接使用。
+              
+//-               .d-grid.gap-2.d-md-flex.justify-content-md-end
+//-                 a.btn.btn-primary(href="/view/generateCode") 生成新的验证码
+//-             else
+//-               form(method="POST" action="/view/generateCode")
+//-                 .mb-3
+//-                   p 点击下方按钮生成一个新的邀请验证码。
+//-                 .d-grid
+//-                   button.btn.btn-success.btn-lg(type="submit") 生成验证码
+
+extends layout
+
+block content
+  h1= title
+  
+  .container.mt-4
+    .row
+      .col-md-8.mx-auto
+        .card
+          .card-header
+            h5.card-title 生成邀请验证码
+          .card-body
+            #result-container
+              if code
+                .alert.alert-success
+                  h4 验证码生成成功！
+                  .generated-code.mt-3
+                    p 请将此验证码提供给购买产品的用户用于注册：
+                    .code-display.text-center.p-3.mb-3
+                      h2.text-primary(style="font-family: 'Courier New', monospace; letter-spacing: 2px;")= code
+                    p.text-muted.small
+                      | 验证码已自动保存到数据库，用户注册时可直接使用。
+                
+                .d-grid.gap-2.d-md-flex.justify-content-md-end
+                  button.btn.btn-primary(type="button" id="generateCodeBtn") 生成新的验证码
+              else
+                .mb-3
+                  p 点击下方按钮生成一个新的邀请验证码。
+                .d-grid
+                  button.btn.btn-success.btn-lg(type="button" id="generateCodeBtn") 生成验证码
+
+  script.
+    async function generateNewCode() {
+      const button = event.target;
+      const originalText = button.textContent;
+      
+      // 显示加载状态
+      button.disabled = true;
+      button.textContent = '生成中...';
+      
+      try {
+        // 创建隐藏的表单并提交
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/view/generateCode';
+        
+        // 添加 CSRF token（如果需要）
+        const csrfToken = document.querySelector('input[name="_csrf"]');
+        if (csrfToken) {
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = '_csrf';
+          csrfInput.value = csrfToken.value;
+          form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+        
+      } catch (error) {
+        console.error('生成验证码错误:', error);
+        alert('生成验证码失败，请重试');
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    document.getElementById('generateCodeBtn').addEventListener('click', generateNewCode);

@@ -70,10 +70,20 @@ exports.word_category_list = async function(req, res, next) {
         const originData = await WordCategory.find().exec();
         const newData = await transformCategoryData(originData);
 
+        const defaultCustom = {
+            category: "custom",
+            categoryName: "自定义词库",
+            subcategories: [],
+        };
+        const hasCustom = newData?.find?.((item) => item?.category === "custom");
+
         res.json({
             code: 200,
             success: true,
-            categoryList: newData,
+            categoryList: [
+                ...(newData || []),
+                ...(hasCustom ? [] : [defaultCustom]),
+            ],
         });
     } catch (err) {
         return next(err);

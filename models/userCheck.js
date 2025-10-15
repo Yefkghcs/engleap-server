@@ -20,6 +20,6 @@ const UserCheckSchema = new Schema({
 });
 
 // 添加索引以提高查询性能
-UserCheckSchema.index({ user: 1 });
+// UserCheckSchema.index({ user: 1 });
 
 module.exports = mongoose.model('UserCheck', UserCheckSchema);

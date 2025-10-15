@@ -764,9 +764,10 @@ exports.deleteWordMistake = async (req, res) => {
                 // 状态为unmarked，删除记录
                 deletePromises.push(
                     UserWord.deleteOne({
-                        wordCategory: userWord.category,
-                        wordSubcategory: userWord.subcategory,
-                        wordId: userWord.id
+                        user: userId,
+                        wordCategory: userWord.wordCategory,
+                        wordSubcategory: userWord.wordSubcategory,
+                        wordId: userWord.wordId
                     })
                 );
             } else {

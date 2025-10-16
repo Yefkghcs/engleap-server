@@ -23,6 +23,7 @@ exports.addUserCheck = async (req, res) => {
                 code: 200,
                 success: true,
                 message: '当日已打卡',
+                data: checkList,
             });
             return;
         }
@@ -37,6 +38,7 @@ exports.addUserCheck = async (req, res) => {
             code: 200,
             success: true,
             message: '新增打卡成功',
+            data: user.checkStatus,
         });
     } catch (error) {
         console.error('打卡异常:', error);

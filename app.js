@@ -39,6 +39,7 @@ app.use(cors({
   origin: [
     'http://localhost:8080',      // 开发环境
     'http://192.168.0.105:8080',      // 开发环境
+    'https://lovable.dev',      // 预览环境
     'https://engleap.lovable.app' // 生产环境
   ],
   credentials: true, // 允许携带 cookies

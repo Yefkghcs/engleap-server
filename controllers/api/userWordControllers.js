@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const UserWord = require('../../models/userWord');
 const Word = require('../../models/word');
+const { CustomWord } = require('../../models/customWord');
 const jwtFunc = require('../../utils/jwt');
 
 exports.getTotalData = async (req, res) => {
@@ -62,23 +63,81 @@ const mergeWordData = (words, userWords) => {
         const userWord = userWordMap.get(businessKey);
         
         // 创建不包含 _id 的 word 对象
-        const { _id, __v, ...wordData } = word.toObject();
+        const { _id, __v, ...wordData } = word.toObject ? word.toObject() : word;
         
         if (userWord) {
             return {
                 ...wordData,
                 status: userWord.status,
                 mistakes: userWord.mistakes,
-                // hasUserRecord: true
             };
         } else {
             return {
                 ...wordData,
                 status: 'unmarked',
                 mistakes: [],
-                // hasUserRecord: false
             };
         }
+    });
+};
+
+// 按照创建时间排序
+const mergeWordDataByTime = (words, userWords) => {
+    const userWordMap = new Map();
+    
+    // 使用业务字段作为键：category + subcategory + id
+    userWords.forEach(uw => {
+        const businessKey = `${uw.wordCategory}|${uw.wordSubcategory}|${uw.wordId}`;
+        userWordMap.set(businessKey, uw);
+    });
+
+    // 首先处理所有 words，创建基础结果
+    const allWordsResult = words.map(word => {
+        // 使用相同的业务字段组合作为键
+        const businessKey = `${word.category}|${word.subcategory}|${word.id}`;
+        const userWord = userWordMap.get(businessKey);
+        
+        // 创建不包含 _id 的 word 对象
+        const { _id, __v, ...wordData } = word.toObject ? word.toObject() : word;
+        
+        if (userWord) {
+            return {
+                ...wordData,
+                status: userWord.status,
+                mistakes: userWord.mistakes,
+                // 添加 userWord 的创建时间用于排序
+                _userWordCreatedAt: userWord.createdAt
+            };
+        } else {
+            return {
+                ...wordData,
+                status: 'unmarked',
+                mistakes: [],
+                // 对于没有 userWord 的数据，使用一个很晚的时间确保排在后面
+                _userWordCreatedAt: new Date(0)
+            };
+        }
+    });
+
+    // 按照 userWords 的创建时间排序
+    return allWordsResult.sort((a, b) => {
+        // 有 userWord 的数据按照创建时间倒序
+        if (a._userWordCreatedAt && b._userWordCreatedAt) {
+            return new Date(b._userWordCreatedAt) - new Date(a._userWordCreatedAt);
+        }
+        // 有 userWord 的排在前面
+        if (a._userWordCreatedAt.getTime() > 0 && b._userWordCreatedAt.getTime() === 0) {
+            return -1;
+        }
+        if (a._userWordCreatedAt.getTime() === 0 && b._userWordCreatedAt.getTime() > 0) {
+            return 1;
+        }
+        // 都没有 userWord 的保持原顺序
+        return 0;
+    }).map(item => {
+        // 移除临时排序字段
+        const { _userWordCreatedAt, ...result } = item;
+        return result;
     });
 };
 
@@ -280,7 +339,7 @@ exports.getWordsByStatus = async (req, res) => {
                 status,
                 ...(subcategory && { wordSubcategory: subcategory })
             })
-            .sort({ createdAt: -1 })
+            .sort({ id: 1 })
             .skip(skip)
             .limit(parseInt(limit));
 
@@ -376,18 +435,37 @@ exports.getAllWordsByStatus = async (req, res) => {
         });
 
         let words = [];
-        // 查询对应的Word数据
+        // 同时从Word和CustomWord数据库查询对应的单词数据
         if (userWords.length > 0) {
-            words = await Word.find({
-                $or: userWords.map(userWord => ({
-                    category: userWord.wordCategory,
-                    subcategory: userWord.wordSubcategory,
-                    id: userWord.wordId
-                }))
+            // 创建查询条件
+            const queryConditions = userWords.map(userWord => ({
+                category: userWord.wordCategory,
+                subcategory: userWord.wordSubcategory,
+                id: userWord.wordId
+            }));
+
+            // 并行查询Word和CustomWord数据库
+            const [wordResults, customWordResults] = await Promise.all([
+                Word.find({
+                    $or: queryConditions
+                }),
+                CustomWord.find({
+                    $or: queryConditions,
+                    user: userId // CustomWord通常需要关联用户
+                })
+            ]);
+
+            const filterCustomWords = customWordResults?.map?.((item) => {
+                const itemObj = item.toObject ? item.toObject() : item;
+                const { createdAt, updatedAt, user, ...wordData } = itemObj;
+                return wordData;
             });
+
+            // 合并结果
+            words = [...wordResults, ...filterCustomWords];
         }
 
-        const mergedWords = mergeWordData(words, userWords);
+        const mergedWords = mergeWordDataByTime(words, userWords);
 
         res.json({
             code: 200,
@@ -440,7 +518,7 @@ exports.getAllMistakeWords = async (req, res) => {
             user: userId, 
             mistakes: { $exists: true, $ne: [] }
         })
-        .sort({ 'mistakes': -1 })
+        .sort({ updatedAt: -1, })
         .skip(skip)
         .limit(parseInt(limit));
 
@@ -449,15 +527,38 @@ exports.getAllMistakeWords = async (req, res) => {
             mistakes: { $exists: true, $ne: [] }
         });
 
-        const words = await Word.find({
-            $or: userWords.map(userWord => ({
+        let words = [];
+        // 同时从Word和CustomWord数据库查询对应的单词数据
+        if (userWords.length > 0) {
+            // 创建查询条件
+            const queryConditions = userWords.map(userWord => ({
                 category: userWord.wordCategory,
                 subcategory: userWord.wordSubcategory,
                 id: userWord.wordId
-            }))
-        });
+            }));
 
-        const mergedWords = mergeWordData(words, userWords);
+            // 并行查询Word和CustomWord数据库
+            const [wordResults, customWordResults] = await Promise.all([
+                Word.find({
+                    $or: queryConditions
+                }),
+                CustomWord.find({
+                    $or: queryConditions,
+                    user: userId // CustomWord通常需要关联用户
+                })
+            ]);
+
+            const filterCustomWords = customWordResults?.map?.((item) => {
+                const itemObj = item.toObject ? item.toObject() : item;
+                const { createdAt, updatedAt, user, ...wordData } = itemObj;
+                return wordData;
+            });
+
+            // 合并结果
+            words = [...wordResults, ...filterCustomWords];
+        }
+
+        const mergedWords = mergeWordDataByTime(words, userWords);
 
         res.json({
             code: 200,

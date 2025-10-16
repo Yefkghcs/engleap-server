@@ -34,4 +34,14 @@ router.post("/userWords/mistakes/get", user_word_controllers.getAllMistakeWords)
 router.post("/userWords/mistakes/date/get", user_word_controllers.getMistakeWordsByDate);
 router.post("/userWords/mistakes/delete", user_word_controllers.deleteWordMistake);
 
+// 自定义词库
+const custom_word_controllers = require("../controllers/api/customWordControllers");
+router.post("/customWordCategory/create", custom_word_controllers.createCustomCategory);
+router.post("/customWordCategory/delete", custom_word_controllers.deleteCustomCategory);
+router.post("/customWordCategory/get", custom_word_controllers.getUserCustomCategories);
+router.post("/customWords/get", custom_word_controllers.getWordsByCustomCategory);
+router.post("/customWords/status/get", custom_word_controllers.getWordsByStatus);
+router.post("/customWords/mark", custom_word_controllers.markWordStatus);
+router.post("/customWords/mistakes/add", custom_word_controllers.recordWordMistake);
+
 module.exports = router;

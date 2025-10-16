@@ -32,6 +32,5 @@ const verificationCodeSchema = new Schema({
 // 添加索引以提高查询性能
 verificationCodeSchema.index({ code: 1 });
 verificationCodeSchema.index({ isUsed: 1 });
-verificationCodeSchema.index({ createdAt: 1 });
 
 module.exports = mongoose.model('VerificationCode', verificationCodeSchema);

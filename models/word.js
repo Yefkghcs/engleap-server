@@ -41,4 +41,7 @@ const WordSchema = new Schema({
     // collocationAudio: { type: String },
 });
 
+WordSchema.index({ subcategory: 1 });
+WordSchema.index({ id: 1, category: 1, subcategory: 1 }), { unique: true };
+
 module.exports = mongoose.model("Word", WordSchema);

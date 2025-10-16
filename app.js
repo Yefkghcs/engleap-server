@@ -6,6 +6,7 @@ const logger = require('morgan');
 const compression = require("compression");
 const helmet = require("helmet");
 const RateLimit = require("express-rate-limit");
+const cors = require("cors");
 
 const indexRouter = require('./routes/index');
 const userRouter = require('./routes/user');
@@ -19,19 +20,31 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
 
-// app.use(compression());
-// app.use(
-//   helmet.contentSecurityPolicy({
-//     directives: {
-//       "script-src": ["'self'", "cdn.jsdelivr.net"],
-//     },
-//   }),
-// );
-// const limiter = RateLimit({
-//   windowMs: 1 * 1000, // 1 minute
-//   max: 20,
-// });
-// app.use(limiter);
+app.use(compression());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      "script-src": ["'self'", "cdn.jsdelivr.net"],
+    },
+  }),
+);
+const limiter = RateLimit({
+  windowMs: 1 * 1000, // 1 minute
+  max: 100,
+});
+app.use(limiter);
+
+// 配置 CORS
+app.use(cors({
+  origin: [
+    'http://localhost:8080',      // 开发环境
+    'http://192.168.0.105:8080',      // 开发环境
+    'https://engleap.lovable.app' // 生产环境
+  ],
+  credentials: true, // 允许携带 cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+}));
 
 app.use(logger('dev'));
 app.use(express.json());
